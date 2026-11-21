@@ -1,22 +1,54 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const session = require('express-session')
-const customer_routes = require('./router/auth_users.js').authenticated;
-const genl_routes = require('./router/general.js').general;
+require("dotenv").config();
+
+const express = require("express");
+const session = require("express-session");
+const customerRoutes = require("./router/auth_users.js").authenticated;
+const generalRoutes = require("./router/general.js").general;
 
 const app = express();
+const port = Number.parseInt(process.env.PORT || "5000", 10);
+const sessionSecret = process.env.SESSION_SECRET;
 
-app.use(express.json());
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error("PORT must be a valid TCP port between 1 and 65535.");
+}
 
-app.use("/customer",session({secret:"fingerprint_customer",resave: true, saveUninitialized: true}))
+if (!sessionSecret || sessionSecret.length < 32) {
+  throw new Error(
+    "SESSION_SECRET is required and must contain at least 32 characters. " +
+      "Copy .env.example to .env and set a unique secret."
+  );
+}
 
-app.use("/customer/auth/*", function auth(req,res,next){
-//Write the authenication mechanism here
+app.disable("x-powered-by");
+app.use(express.json({ limit: "1mb" }));
+
+app.use(
+  "/customer",
+  session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 2 * 60 * 60 * 1000,
+    },
+  })
+);
+
+// Authentication is intentionally unfinished in this starter project.
+// Return an explicit response rather than allowing protected requests to hang.
+app.use("/customer/auth/*", (_req, res) => {
+  return res.status(501).json({
+    message: "Customer authentication middleware has not been implemented yet.",
+  });
 });
- 
-const PORT =5000;
 
-app.use("/customer", customer_routes);
-app.use("/", genl_routes);
+app.use("/customer", customerRoutes);
+app.use("/", generalRoutes);
 
-app.listen(PORT,()=>console.log("Server is running"));
+app.listen(port, () => {
+  console.log(`Book Reviews API listening on port ${port}`);
+});

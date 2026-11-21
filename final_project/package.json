@@ -1,16 +1,24 @@
 {
-  "name": "bookshop",
-  "version": "1.0.1",
-  "description": "",
+  "name": "express-book-reviews",
+  "version": "1.0.0",
+  "description": "Educational Express API starter for a book catalogue and review service",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "check": "node --check index.js && node --check router/auth_users.js && node --check router/general.js && node --check router/booksdb.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
+  "keywords": [
+    "express",
+    "nodejs",
+    "books",
+    "reviews",
+    "rest-api"
+  ],
+  "author": "Aman Sharma",
+  "license": "Apache-2.0",
   "dependencies": {
+    "dotenv": "^16.4.7",
     "express": "^4.18.1",
     "express-session": "^1.17.3",
     "jsonwebtoken": "^8.5.1",
