@@ -4,8 +4,8 @@
   "description": "Educational Express API starter for a book catalogue and review service",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node --env-file=.env index.js",
+    "dev": "nodemon --exec \"node --env-file=.env\" index.js",
     "check": "node --check index.js && node --check router/auth_users.js && node --check router/general.js && node --check router/booksdb.js"
   },
   "keywords": [
@@ -18,7 +18,6 @@
   "author": "Aman Sharma",
   "license": "Apache-2.0",
   "dependencies": {
-    "dotenv": "^16.4.7",
     "express": "^4.18.1",
     "express-session": "^1.17.3",
     "jsonwebtoken": "^8.5.1",
