@@ -1,8 +1,12 @@
 # Express Book Reviews
 
-A Node.js and Express starter API for a small book catalogue and review service. The repository includes sample book data and route modules for public catalogue access and registered-customer actions.
+[![Node.js checks](https://github.com/amansharmas7/expressBookReviews/actions/workflows/node-checks.yml/badge.svg)](https://github.com/amansharmas7/expressBookReviews/actions/workflows/node-checks.yml)
+[![Node.js 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-> **Implementation status:** This repository is an educational starter project, not a finished production API. Several route handlers and the authentication middleware are intentionally marked as TODO / "Yet to be implemented". The API is not secure or feature-complete until those sections are implemented and tested.
+A Node.js and Express educational starter API for a small book catalogue and review service. It includes a sample in-memory catalogue, route modules for public book access and customer actions, and a small smoke-test suite for the currently available server behaviour.
+
+> **Implementation status:** This repository is an educational starter project, not a finished production API. Several route handlers and the authentication middleware are intentionally unfinished. They return HTTP 501 rather than pretending to complete the requested action. The smoke tests verify the health endpoint and this explicit placeholder behaviour; they do not certify authentication, authorization, or full API functionality.
 
 ## Technology
 
@@ -102,7 +106,7 @@ This check validates JavaScript syntax only; it does not prove that unfinished r
 
 ## Planned API surface
 
-The route modules provide the following starter endpoints. **Most handlers currently return a placeholder response and must be implemented before use.**
+The route modules provide the following starter endpoints. **Most handlers currently return HTTP 501 and must be implemented before use.**
 
 | Method | Route | Intended purpose | Current status |
 | --- | --- | --- | --- |
@@ -111,11 +115,22 @@ The route modules provide the following starter endpoints. **Most handlers curre
 | GET | `/isbn/:isbn` | Find a book by ISBN | TODO |
 | GET | `/author/:author` | Find books by author | TODO |
 | GET | `/title/:title` | Find books by title | TODO |
-| GET | `/review/:isbn` | Read a book's reviews | TODO |
+| GET | `/review/:isbn` | Read a book's reviews | HTTP 501 placeholder |
 | POST | `/customer/login` | Sign in a customer | TODO |
 | PUT | `/customer/auth/review/:isbn` | Add or update a review | TODO |
 
 The sample catalogue is stored in memory in `router/booksdb.js`; changes are not persisted between server restarts.
+
+## Tests and development checks
+
+Run the syntax check and Node.js smoke tests:
+
+```bash
+npm run check
+npm test
+```
+
+The tests verify the health endpoint and confirm that currently unfinished routes return HTTP 501. They do not test completed registration, login, JWT validation, review persistence, or role-based authorization because those features are not implemented yet.
 
 ## Before production use
 
@@ -126,6 +141,10 @@ The sample catalogue is stored in memory in `router/booksdb.js`; changes are not
 - Add automated tests for successful and rejected requests.
 - Review session, cookie, CORS, rate-limit, and logging settings for the deployment environment.
 - Do not use real user credentials or personal data in the current starter implementation.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow. Security reporting instructions are in [SECURITY.md](SECURITY.md).
 
 ## License
 
