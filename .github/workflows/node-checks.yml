@@ -30,3 +30,6 @@ jobs:
 
       - name: Check JavaScript syntax
         run: npm run check
+
+      - name: Run smoke tests
+        run: npm test
