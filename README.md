@@ -29,7 +29,7 @@ A Node.js and Express starter API for a small book catalogue and review service.
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 20.6 or newer
 - npm
 
 ## Run locally
@@ -76,7 +76,7 @@ Keep `.env` private. It is ignored by Git.
 npm start
 ```
 
-The server listens on port `5000` by default. Set `PORT` in `.env` to use another port.
+The server listens on port `5000` by default. The npm scripts use Node.js `--env-file` support to load `final_project/.env`; set `PORT` there to use another port.
 
 For development with automatic restarts:
 
