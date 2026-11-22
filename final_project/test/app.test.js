@@ -186,8 +186,7 @@ test("review endpoint validates ISBN and review text", async () => {
   const emptyReview = await jsonRequest(
     "/customer/auth/review/1",
     "PUT",
-    { review: "   " },
-    token
+    { review: "   " }
   );
   assert.equal(emptyReview.status, 401);
 
