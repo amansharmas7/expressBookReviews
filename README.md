@@ -1,35 +1,47 @@
 # Express Book Reviews
 
 [![Node.js checks](https://github.com/amansharmas7/expressBookReviews/actions/workflows/node-checks.yml/badge.svg)](https://github.com/amansharmas7/expressBookReviews/actions/workflows/node-checks.yml)
-[![Node.js 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js)](https://nodejs.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-A Node.js and Express educational starter API for a small book catalogue and review service. It includes a sample in-memory catalogue, route modules for public book access and customer actions, and a small smoke-test suite for the currently available server behaviour.
+A Node.js and Express REST API for a sample book catalogue, customer registration and login, JWT-protected reviews, and public catalogue lookup.
 
-> **Implementation status:** This repository is an educational starter project, not a finished production API. Several route handlers and the authentication middleware are intentionally unfinished. They return HTTP 501 rather than pretending to complete the requested action. The smoke tests verify the health endpoint and this explicit placeholder behaviour; they do not certify authentication, authorization, or full API functionality.
+## Features
+
+- Register customers with validated usernames, optional email addresses, and scrypt-hashed passwords.
+- Authenticate customers and issue signed, one-hour JWT bearer tokens.
+- Protect review creation and updates with JWT verification and account authorization.
+- List books and look up books by ISBN, author, or title.
+- Read public reviews by ISBN.
+- Validate request bodies, route parameters, and review lengths.
+- Run API integration tests with Node's built-in test runner.
 
 ## Technology
 
-- Node.js
+- Node.js 20.6+
 - Express 4
-- express-session
-- JSON Web Tokens (`jsonwebtoken`)
-- dotenv for local environment configuration
+- JSON Web Tokens (HS256)
+- Node.js crypto scrypt for password hashing
+- express-session (retained for compatibility with the starter app)
 
 ## Repository structure
 
-```text
+~~~text
 .
 ├── final_project/
 │   ├── index.js
+│   ├── .env.example
 │   ├── package.json
-│   └── router/
-│       ├── auth_users.js
-│       ├── booksdb.js
-│       └── general.js
+│   ├── router/
+│   │   ├── auth_users.js
+│   │   ├── booksdb.js
+│   │   └── general.js
+│   └── test/
+│       └── app.test.js
+├── .github/workflows/node-checks.yml
 ├── LICENSE
 └── README.md
-```
+~~~
 
 ## Requirements
 
@@ -38,109 +50,152 @@ A Node.js and Express educational starter API for a small book catalogue and rev
 
 ## Run locally
 
-### 1. Move into the application directory
+### 1. Install dependencies
 
-```bash
+~~~bash
 cd final_project
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
-```
+~~~
 
-### 3. Configure the session secret
+### 2. Configure secrets
 
 Copy the example environment file:
 
 **macOS / Linux**
 
-```bash
+~~~bash
 cp .env.example .env
-```
+~~~
 
 **Windows PowerShell**
 
-```powershell
+~~~powershell
 Copy-Item .env.example .env
-```
+~~~
 
-Replace the placeholder `SESSION_SECRET` with a unique random value of at least 32 characters. You can generate one with:
+Generate two independent secrets:
 
-```bash
+~~~bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+~~~
 
-Keep `.env` private. It is ignored by Git.
+Use one random value for SESSION_SECRET and a different random value for JWT_SECRET. Both must contain at least 32 characters. Never commit .env.
 
-### 4. Start the server
+### 3. Start the server
 
-```bash
+~~~bash
 npm start
-```
+~~~
 
-The server listens on port `5000` by default. The npm scripts use Node.js `--env-file` support to load `final_project/.env`; set `PORT` there to use another port.
+The API listens on port 5000 by default. Set PORT in .env to use another port. For development with automatic restarts:
 
-For development with automatic restarts:
-
-```bash
+~~~bash
 npm run dev
-```
+~~~
+
+## API reference
+
+All request and response bodies use JSON. The server returns structured JSON errors and uses standard HTTP status codes.
+
+| Method | Route | Authentication | Purpose |
+| --- | --- | --- | --- |
+| GET | /health | Public | Health check |
+| POST | /register | Public | Register a customer |
+| POST | /customer/login | Public | Verify credentials and return a JWT |
+| GET | / | Public | List the sample catalogue |
+| GET | /isbn/:isbn | Public | Find one book by ISBN |
+| GET | /author/:author | Public | Case-insensitive partial author search |
+| GET | /title/:title | Public | Case-insensitive partial title search |
+| GET | /review/:isbn | Public | Read reviews for a book |
+| PUT | /customer/auth/review/:isbn | Bearer JWT | Add or update the authenticated user's review |
+
+### Register
+
+~~~http
+POST /register
+Content-Type: application/json
+
+{
+  "username": "reader_01",
+  "password": "a-long-unique-password",
+  "email": "reader@example.com"
+}
+~~~
+
+Username must be 3–30 characters using letters, numbers, dot, underscore, or hyphen. Password must be 8–128 characters. Email is optional but must be valid when supplied. Duplicate usernames are rejected without regard to case.
+
+### Login
+
+~~~http
+POST /customer/login
+Content-Type: application/json
+
+{
+  "username": "reader_01",
+  "password": "a-long-unique-password"
+}
+~~~
+
+A successful response contains a signed JWT, token type, expiry in seconds, and the public user profile. Send the token on protected requests:
+
+~~~http
+Authorization: Bearer <token>
+~~~
+
+Tokens use HS256, expire after one hour, and are verified against the JWT_SECRET, issuer, and audience.
+
+### Add or update a review
+
+~~~http
+PUT /customer/auth/review/1
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "review": "A thoughtful and engaging book."
+}
+~~~
+
+A review must contain 1–2,000 characters. Each authenticated customer has one review per ISBN; a subsequent PUT updates that customer's existing review. Other customers' reviews are not overwritten.
+
+### Catalogue lookup
+
+- GET / returns the catalogue keyed by ISBN.
+- GET /isbn/1 returns the matching book or 404.
+- GET /author/Chinua%20Achebe and GET /title/Things%20Fall%20Apart perform case-insensitive partial matches and return arrays.
+- GET /review/1 returns the review map for the selected ISBN.
+
+Malformed ISBNs and invalid search terms return 400. Unknown ISBNs return 404. Searches with no matches return an empty array.
 
 ## Available scripts
 
 | Command | Description |
 | --- | --- |
-| `npm start` | Run the API |
-| `npm run dev` | Run with Nodemon |
-| `npm run check` | Perform Node.js syntax checks on the application files |
+| npm start | Start the API |
+| npm run dev | Start with Nodemon |
+| npm run check | Check JavaScript syntax |
+| npm test | Run API integration tests |
 
-Run the syntax check before committing:
+Run all checks from final_project:
 
-```bash
-npm run check
-```
-
-This check validates JavaScript syntax only; it does not prove that unfinished routes or authentication flows work.
-
-## Planned API surface
-
-The route modules provide the following starter endpoints. **Most handlers currently return HTTP 501 and must be implemented before use.**
-
-| Method | Route | Intended purpose | Current status |
-| --- | --- | --- | --- |
-| POST | `/register` | Register a customer | TODO |
-| GET | `/` | List books | TODO |
-| GET | `/isbn/:isbn` | Find a book by ISBN | TODO |
-| GET | `/author/:author` | Find books by author | TODO |
-| GET | `/title/:title` | Find books by title | TODO |
-| GET | `/review/:isbn` | Read a book's reviews | HTTP 501 placeholder |
-| POST | `/customer/login` | Sign in a customer | TODO |
-| PUT | `/customer/auth/review/:isbn` | Add or update a review | TODO |
-
-The sample catalogue is stored in memory in `router/booksdb.js`; changes are not persisted between server restarts.
-
-## Tests and development checks
-
-Run the syntax check and Node.js smoke tests:
-
-```bash
+~~~bash
 npm run check
 npm test
-```
+~~~
 
-The tests verify the health endpoint and confirm that currently unfinished routes return HTTP 501. They do not test completed registration, login, JWT validation, review persistence, or role-based authorization because those features are not implemented yet.
+GitHub Actions runs the syntax checks and tests on pushes and pull requests to main.
 
-## Before production use
+## Current limitations
 
-- Implement registration, login, JWT validation, and authorization checks.
-- Hash passwords with a suitable password-hashing algorithm; never store plaintext passwords.
-- Add input validation and consistent error handling.
-- Replace the in-memory book catalogue with a persistent database.
-- Add automated tests for successful and rejected requests.
-- Review session, cookie, CORS, rate-limit, and logging settings for the deployment environment.
-- Do not use real user credentials or personal data in the current starter implementation.
+- **In-memory storage:** users and reviews are stored in process memory and reset when the server restarts. The book catalogue is a static sample dataset. Use a persistent database before multi-instance or production deployment.
+- **No password recovery or email verification:** registration does not send verification messages, and there is no password-reset flow.
+- **JWT lifecycle:** tokens expire after one hour; refresh-token rotation and revocation are not implemented. A user removed from the in-memory store is immediately unable to use their token.
+- **Rate limiting:** authentication and registration do not yet have a distributed rate limiter or account lockout. Add one before exposing the service publicly.
+- **Session store:** the legacy express-session middleware uses Express's default in-memory store. It is retained for starter compatibility and is not suitable for production.
+- **No roles:** authorization currently means an authenticated customer may create or update only their own review. There are no administrator or moderator roles.
+- **HTTPS required in deployment:** terminate TLS at a trusted reverse proxy or hosting platform and configure secure cookies appropriately.
+
+Do not use this educational implementation with real customer credentials or personal data until persistent storage, operational security controls, and deployment settings have been reviewed.
 
 ## Contributing
 
@@ -148,4 +203,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow. Security re
 
 ## License
 
-This project retains the Apache License 2.0 included with the starter material. See [LICENSE](LICENSE).
+This project retains the Apache License 2.0 from the starter material. The existing LICENSE file is intentionally unchanged.

@@ -1,7 +1,7 @@
 {
   "name": "express-book-reviews",
   "version": "0.1.0",
-  "description": "Educational Express REST API starter for a book catalogue, customer authentication, and reviews.",
+  "description": "Educational Express REST API for a book catalogue, customer authentication, and reviews.",
   "main": "index.js",
   "scripts": {
     "start": "node --env-file=.env index.js",
